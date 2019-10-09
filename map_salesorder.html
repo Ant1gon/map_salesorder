@@ -31,31 +31,42 @@
 
 <body style="overflow-wrap: break-word;">
     <div style="margin-bottom:10px;">
-        <div  style="float:left;">Дата
-                    З:<input type="date" id="ordersDate1" data-position="right top">
-                    По:<input type="date" id="ordersDate2" data-position="right top">
-                    <input type="button" id="btn" value="Выбрать дату" onclick="setDateFilter()">
+        <div style="float:left;">Дата
+            З:<input type="date" id="ordersDate1" data-position="right top">
+            По:<input type="date" id="ordersDate2" data-position="right top">
+            <input type="button" id="btn" value="Выбрать дату" onclick="getOrdersAsDateFilter()">
         </div>
         <div>
             <label for="atSelect" style="padding-left:10px;">АТ
                 <select id="atSelect" style="margin-left: 10px;"></select>
                 <input type="button" value="Выбрать АТ" onclick="global()">
-              <input type="button" value="Тестовая" onclick="test()">
+                <input type="button" value="Тестовая" id="testBTN" style="display:'none;'" onclick="test()">
             </label>
         </div>
     </div>
     <div id="map" style="font-family: undefined;"></div>
-    <script type="text/javascript">
-    setPatListToField();
+    <script type="text/javascript">        
+    var supervizors = {
+        1:"volkova",
+        2:"furman"
+    };
+    var selectedSupervizor = supervizors[1];
+    setPatListToField();    
     var Sectors = L.featureGroup();
     var Orders = L.featureGroup();
     var OrdersSectors = L.featureGroup();
     var rcg_address;
     var ordernumber;
     var req = new XMLHttpRequest();
+    var type_Dict = {
+        "продажа": "1",
+        "сервисное обслуживание": "2",
+        "ремонт": "3",
+        "опрос": "4",
+        "замена го": "5"
+    };
+
     global();
-
-
 
     var map = L.map('map', { preferCanvas: true }).setView([51.51714, 31.28505], 10);
     L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
@@ -90,17 +101,282 @@
     L.control.layers.tree(baseTree).addTo(map);
 
 
-    function global(){
+    function global() {
         Sectors.clearLayers();
+        getSectorsAsFilter()
+        getOrdersAsATFilter();
+        /*
+                var reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.0/rgc_sectors()?$select=rgc_name,ownerid," +
+                    "rgc_start_latitude,rgc__start_longitude," +
+                    "rgc_end_latitude,rgc_end_longitude";
 
+                var selectedAt = document.getElementById('atSelect');
+                var selectedAtId = selectedAt.options[selectedAt.selectedIndex].id;
+                if (selectedAtId != '0') {
+                    reqStr = reqStr + "&$filter=_ownerid_value eq " + selectedAtId;
+                }
+
+                req.open("GET", reqStr, true);
+                req.setRequestHeader("OData-MaxVersion", "4.0");
+                req.setRequestHeader("OData-Version", "4.0");
+                req.setRequestHeader("Accept", "application/json");
+                req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+                req.setRequestHeader("Prefer", "odata.include-annotations=\"*\"");
+                req.onreadystatechange = function() {
+                    if (this.readyState === 4) {
+                        req.onreadystatechange = null;
+                        if (this.status === 200) {
+                            var result = JSON.parse(this.response);
+                            result.value.forEach(function(item, i, arr) {
+                                //var bounds = [[item.rgc_start_latitude, item.rgc__start_longitude], [item.rgc_end_latitude, item.rgc_end_longitude]];
+                                ////
+                                var bounds = [
+                                    [item.rgc_start_latitude, item.rgc__start_longitude],
+                                    [item.rgc_end_latitude, item.rgc_end_longitude]
+                                ];
+                                ////
+                                var rc = L.rectangle(bounds, { color: "#000000", opacity: 0.5, fill: false, weight: 1 }).addTo(Sectors);
+
+                                rc.bindTooltip(item.rgc_name, {
+                                    permanent: true,
+                                    direction: "center"
+                                }).openTooltip();
+
+
+                                rc.on('click', function() {
+                                    var req2 = new XMLHttpRequest();
+                                    req2.open("GET", "https://cc.ent.ukrgas.com.ua/gas//api/data/v8.1/rgc_sectors?$select=rgc_name,rgc_sectorid", true);
+                                    req2.setRequestHeader("OData-MaxVersion", "4.0");
+                                    req2.setRequestHeader("OData-Version", "4.0");
+                                    req2.setRequestHeader("Accept", "application/json");
+                                    req2.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+                                    req2.onreadystatechange = function() {
+                                        if (this.readyState === 4) {
+                                            req2.onreadystatechange = null;
+                                            if (this.status === 200) {
+                                                var result2 = JSON.parse(this.response);
+                                                result2.value.forEach(function(item2, i, arr) {
+                                                    if (item2.rgc_name === item.rgc_name) {
+                                                        var streets = [];
+                                                        var req3 = new XMLHttpRequest();
+                                                        req3.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/rgc_settlements?$select=_rgc_service_sector_value,rgc_name,_rgc_parent_value&$filter=_rgc_service_sector_value%20eq%20" + item2.rgc_sectorid, true);
+                                                        req3.setRequestHeader("OData-MaxVersion", "4.0");
+                                                        req3.setRequestHeader("OData-Version", "4.0");
+                                                        req3.setRequestHeader("Accept", "application/json");
+                                                        req3.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+                                                        req3.setRequestHeader("Prefer", "odata.include-annotations=\"*\"");
+                                                        req3.onreadystatechange = function() {
+                                                            if (this.readyState === 4) {
+                                                                req3.onreadystatechange = null;
+                                                                if (this.status === 200) {
+                                                                    var results3 = JSON.parse(this.response);
+                                                                    for (var i = 0; i < results3.value.length; i++) {
+                                                                        var _rgc_parent_value_formatted = results3.value[i]["_rgc_parent_value@OData.Community.Display.V1.FormattedValue"];
+                                                                        streets[streets.length] = _rgc_parent_value_formatted;
+                                                                    }
+                                                                    var uniqueArray = streets.filter(function(item, pos) {
+                                                                        return streets.indexOf(item) == pos;
+                                                                    });
+                                                                    var tStreets = "";
+                                                                    tStreets += "<table>";
+                                                                    if (uniqueArray.length > 20) {
+                                                                        var coutTd = parseInt(uniqueArray.length / 15) + 1;
+                                                                        var cctr = uniqueArray.length % 15;
+                                                                        for (var i = 0; i < uniqueArray.length; i += coutTd) {
+                                                                            tStreets += "<tr><td>";
+                                                                            for (var ii = i; ii < i + coutTd; ii++) {
+                                                                                if (uniqueArray[ii] != undefined) {
+                                                                                    tStreets += uniqueArray[ii] + "</td><td>";
+                                                                                }
+                                                                            }
+                                                                            tStreets += "</td><tr>";
+                                                                        }
+                                                                    } else {
+                                                                        uniqueArray.forEach(function(item3, pos) {
+                                                                            tStreets += "<tr><td>" + item3 + "</td><tr>";
+                                                                        });
+                                                                    }
+                                                                    tStreets += "</table>";
+                                                                    if (tStreets === 0 || tStreets === "<table></table>") {
+                                                                        tStreets = "Нет привязаных улиц";
+                                                                    }
+                                                                    rc.bindTooltip(
+                                                                        tStreets, {}).openTooltip();
+                                                                } else {
+                                                                    Xrm.Utility.alertDialog(this.statusText);
+                                                                }
+                                                            }
+                                                        };
+                                                        req3.send();
+                                                    }
+                                                });
+                                            } else {
+                                                Xrm.Utility.alertDialog(this.statusText);
+                                            }
+                                        }
+                                    };
+                                    req2.send();
+                                });
+                            });
+                        } else {
+                            Xrm.Utility.alertDialog(this.statusText);
+                        }
+                    }
+                };
+                req.send();*/
+        /*
+                //var m = [];
+                var req4 = new XMLHttpRequest();
+                req4.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22af%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
+                req4.setRequestHeader("OData-MaxVersion", "4.0");
+                req4.setRequestHeader("OData-Version", "4.0");
+                req4.setRequestHeader("Accept", "application/json");
+                req4.onreadystatechange = function() {
+                    if (this.readyState === 4) {
+                        req4.onreadystatechange = null;
+                        if (this.status === 200) {
+                            var results4 = JSON.parse(this.response);
+                            results4.value.forEach(function(item4, i, arr) {
+                                //console.log(item4);
+                                var req5 = new XMLHttpRequest();
+                                req5.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/opportunities?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22true%22%3E%3Centity%20name%3D%22opportunity%22%3E%3Cattribute%20name%3D%22rgc_id%22%20%2F%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3Cattribute%20name%3D%22opportunityid%22%20%2F%3E%3Corder%20attribute%3D%22rgc_id%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22rgc_address%22%20operator%3D%22eq%22%20uitype%3D%22customeraddress%22%20value%3D%22%7B" + item4.af_x002e_rgc_address + "%7D%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22salesorder%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20alias%3D%22ak%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22salesorderid%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3Clink-entity%20name%3D%22customeraddress%22%20from%3D%22customeraddressid%22%20to%3D%22rgc_address%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22ad%22%3E%3Cattribute%20name%3D%22latitude%22%20%2F%3E%3Cattribute%20name%3D%22longitude%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
+                                req5.setRequestHeader("OData-MaxVersion", "4.0");
+                                req5.setRequestHeader("OData-Version", "4.0");
+                                req5.setRequestHeader("Accept", "application/json");
+                                req5.onreadystatechange = function() {
+                                    if (this.readyState === 4) {
+                                        req5.onreadystatechange = null;
+                                        if (this.status === 200) {
+                                            var results5 = JSON.parse(this.response);
+                                            results5.value.forEach(function(item5, i, arr) {
+                                                if (item5.ad_x002e_latitude != undefined && item5.ad_x002e_longitude != undefined) {
+                                                    var i = L.ExtraMarkers.icon({
+                                                        icon: 'fa-coffee',
+                                                        markerColor: 'blue',
+                                                        shape: 'circle',
+                                                        prefix: 'fa',
+                                                    });
+                                                    //m.push(L.marker([item5.ad_x002e_latitude, item5.ad_x002e_longitude], { icon: i, }).bindPopup());
+                                                    var a = "<a href= 'https://cc.ent.ukrgas.com.ua/gas/main.aspx?etc=1088&extraqs=%3f_gridType%3d1088%26etc%3d1088%26id%3d%257b" + item4.salesorderid + "%257d%26rskey%3d%257b00000000-0000-0000-00AA-000000666900%257d&histKey=608087546&newWindow=true&pagetype=entityrecord&rskey=%7b00000000-0000-0000-00AA-000000666900%7d#646830465' target='_blank'>" + item4.ordernumber + "</a>";
+                                                    L.marker([item5.ad_x002e_latitude, item5.ad_x002e_longitude], { icon: i, }).bindPopup(a).addTo(Orders);
+                                                }
+                                            });
+                                        } else {
+                                            Xrm.Utility.alertDialog(this.statusText);
+                                        }
+                                    }
+                                };
+                                req5.send();
+                            });
+                        } else {
+                            Xrm.Utility.alertDialog(this.statusText);
+                        }
+                    }
+                };
+                req4.send();*/
+    }
+
+    function hideAdminPanel() {
+        var role = Xrm.Page.context.getUserRoles();
+        var delRoles = ["3319aaff-a901-e811-80cf-00155d0f313b"];//"55d2f43e-ad08-e311-8620-00155d001525"
+        var visible = false;
+        $.each(role, function(key, value) {
+            $.each(delRoles, function(key1, value1) {
+                if (value == value1) visible = true;
+            });
+        });
+        if (visible) {
+            document.getElementById('testBTN').style.display = 'block';
+            //document.getElementById('changeTypePanelBTN').style.display = 'block';
+        };
+    };
+
+    function test() {
+        /*
+        Sectors.clearLayers();
+        Orders.clearLayers();
+        //getSectorsAsFilter()
+                getOrdersAsATFilter();
+                getOrdersAsDateFilter();
+        
+        var options = {
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+        };
+
+        var pickedOrdersDate1 = new Date(document.getElementById("ordersDate1").value);
+        var pickedOrdersDate2 = new Date(document.getElementById("ordersDate2").value);
+        pickedOrdersDate1 = pickedOrdersDate1.toLocaleString(pickedOrdersDate1, options);
+        pickedOrdersDate2 = pickedOrdersDate2.toLocaleString(pickedOrdersDate2, options);
+        ///
+        //Orders.clearLayers();
+        var selectedAt = document.getElementById('atSelect');
+        var reqStr = "";
+        var rgc_type = 2; //volkova
+        if (selectedAt.options[selectedAt.selectedIndex].id == "0") {
+            reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%20%20%20%20%3Centity%20name%3D%22salesorder%22%3E%0D%0A%20%20%20%20%20%20%20%20%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3Cfilter%20type%3D%22and%22%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%09%09%09%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%09%09%09%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22eq%22%20value%3D%22" + rgc_type + "%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3C%2Ffilter%3E%0D%0A%20%20%20%20%20%20%20%20%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22af%22%3E%0D%0A%20%20%20%20%20%20%20%20%20%20%20%20%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%20%20%20%20%20%20%20%20%3C%2Flink-entity%3E%0D%0A%20%20%20%20%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+        } else {
+            reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22eq%22%20value%3D%22" + rgc_type + "%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uiname%3D%22%D0%90%D0%A2%20%26quot%3B%D0%A7%D0%95%D0%A0%D0%9D%D0%86%D0%93%D0%86%D0%92%D0%93%D0%90%D0%97%26quot%3B%22%20uitype%3D%22team%22%20value%3D%22%7B" + selectedAt.options[selectedAt.selectedIndex].id + "%7D%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+        }
+        var req4 = new XMLHttpRequest();
+        req4.open("GET", reqStr, false);
+        req4.setRequestHeader("OData-MaxVersion", "4.0");
+        req4.setRequestHeader("OData-Version", "4.0");
+        req4.setRequestHeader("Accept", "application/json");
+        req4.onreadystatechange = function() {
+            if (this.readyState === 4) {
+                req4.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    results.value.forEach(function(item4, i, arr) {
+                        var tDate = new Date(item4.requestdeliveryby);
+                        var tDate = tDate.toLocaleString(tDate, options);
+                        if (tDate === pickedOrdersDate1 && pickedOrdersDate2 === "Invalid Date") {
+                            Orders.clearLayers();
+                            getmarkers(item4.op_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
+                        } else if (tDate === pickedOrdersDate2 && pickedOrdersDate1 === "Invalid Date") {
+                            Orders.clearLayers();
+                            getmarkers(item4.op_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
+                        } else if (pickedOrdersDate1 != "Invalid Date" && pickedOrdersDate2 != "Invalid Date") {
+                            if (tDate >= pickedOrdersDate1 && tDate <= pickedOrdersDate2) {
+                                Orders.clearLayers();
+                                getmarkers(item4.op_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
+                            }
+                        } else if (pickedOrdersDate1 === "Invalid Date" && pickedOrdersDate2 === "Invalid Date") {
+                            Orders.clearLayers();
+                            getmarkers(item4.op_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
+                        };
+                    });
+                } else {
+                    Xrm.Utility.alertDialog(this.statusText);
+                }
+            }
+        };
+        req4.send();
+        ///
+        /*        var req4 = new XMLHttpRequest();
+                req4.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22af%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
+                req4.setRequestHeader("OData-MaxVersion", "4.0");
+                req4.setRequestHeader("OData-Version", "4.0");
+                req4.setRequestHeader("Accept", "application/json");
+                req4.onreadystatechange = function() {
+                    if (this.readyState === 4) {
+                        req4.onreadystatechange = null;
+                        if (this.status === 200) {
+                            var results4 = JSON.parse(this.response);
+                            results4.value.forEach(function(item4, i, arr) {*/
+    }
+
+    function getSectorsAsFilter() {
         var reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.0/rgc_sectors()?$select=rgc_name,ownerid," +
             "rgc_start_latitude,rgc__start_longitude," +
-            "rgc_end_latitude,rgc_end_longitude";       
-        
+            "rgc_end_latitude,rgc_end_longitude";
+
         var selectedAt = document.getElementById('atSelect');
         var selectedAtId = selectedAt.options[selectedAt.selectedIndex].id;
-        if(selectedAtId != '0'){    
-            reqStr = reqStr+"&$filter=_ownerid_value eq "+selectedAtId;
+        if (selectedAtId != '0') {
+            reqStr = reqStr + "&$filter=_ownerid_value eq " + selectedAtId;
         }
 
         req.open("GET", reqStr, true);
@@ -211,10 +487,37 @@
             }
         };
         req.send();
+    }
+/*
+    setTimeout(function() {
+            parent.frames[0].Xrm.Page.getAttribute("name").setValue(null);
+            parent.frames[0].Xrm.Page.getControl("line3").setFocus();
+        }, 750);*/
 
-        //var m = [];
+    function getOrdersAsATFilter() {
+        Orders.clearLayers();
+        var selectedAt = document.getElementById('atSelect');
+        //console.log('AT :' + selectedAt.options[selectedAt.selectedIndex].id);
+        var reqStr = "";
+        if (selectedAt.options[selectedAt.selectedIndex].id == "0") {
+            if(selectedSupervizor == supervizors[1]){
+            reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["сервисное обслуживание"]+"2%3C%2Fvalue%3E%0D%0A%3Cvalue%3E"+type_Dict["ремонт"]+"3%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            }
+            else {
+                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["замена го"]+"2%3C%2Fvalue%3E%0D%0A%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            }
+            /*reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E"*/
+        } else {
+            if(selectedSupervizor == supervizors[1]){
+            reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["сервисное обслуживание"]+"%3C%2Fvalue%3E%0D%0A%3Cvalue%3E" +type_Dict["ремонт"]+ "%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22%7B"+selectedAt.options[selectedAt.selectedIndex].id+"%7D%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            }else{
+                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%21ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["замена го"]+"%3C%2Fvalue%3E%0D%0A%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22%7B"+selectedAt.options[selectedAt.selectedIndex].id+"%7D%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            }
+            /*reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3C%2Flink-entity%3E%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22ac%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uiname%3D%22%D0%90%D0%A2%20%26quot%3B%D0%A7%D0%95%D0%A0%D0%9D%D0%86%D0%93%D0%86%D0%92%D0%93%D0%90%D0%97%26quot%3B%22%20uitype%3D%22team%22%20value%3D%22%7B" +
+                selectedAt.options[selectedAt.selectedIndex].id + "%7D%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E";*/
+        }
         var req4 = new XMLHttpRequest();
-        req4.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22af%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
+        req4.open("GET", reqStr, true);
         req4.setRequestHeader("OData-MaxVersion", "4.0");
         req4.setRequestHeader("OData-Version", "4.0");
         req4.setRequestHeader("Accept", "application/json");
@@ -222,11 +525,11 @@
             if (this.readyState === 4) {
                 req4.onreadystatechange = null;
                 if (this.status === 200) {
-                    var results4 = JSON.parse(this.response);
-                    results4.value.forEach(function(item4, i, arr) {
-                        //console.log(item4);
+                    var results = JSON.parse(this.response);
+                    results.value.forEach(function(item4, i, arr) {
+                        //console.log(item);
                         var req5 = new XMLHttpRequest();
-                        req5.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/opportunities?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22true%22%3E%3Centity%20name%3D%22opportunity%22%3E%3Cattribute%20name%3D%22rgc_id%22%20%2F%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3Cattribute%20name%3D%22opportunityid%22%20%2F%3E%3Corder%20attribute%3D%22rgc_id%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22rgc_address%22%20operator%3D%22eq%22%20uitype%3D%22customeraddress%22%20value%3D%22%7B" + item4.af_x002e_rgc_address + "%7D%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22salesorder%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20alias%3D%22ak%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22salesorderid%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3Clink-entity%20name%3D%22customeraddress%22%20from%3D%22customeraddressid%22%20to%3D%22rgc_address%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22ad%22%3E%3Cattribute%20name%3D%22latitude%22%20%2F%3E%3Cattribute%20name%3D%22longitude%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
+                        req5.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/opportunities?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22true%22%3E%3Centity%20name%3D%22opportunity%22%3E%3Cattribute%20name%3D%22rgc_id%22%20%2F%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3Cattribute%20name%3D%22opportunityid%22%20%2F%3E%3Corder%20attribute%3D%22rgc_id%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22rgc_address%22%20operator%3D%22eq%22%20uitype%3D%22customeraddress%22%20value%3D%22%7B" + item4.op_x002e_rgc_address + "%7D%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22salesorder%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20alias%3D%22ak%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22salesorderid%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3Clink-entity%20name%3D%22customeraddress%22%20from%3D%22customeraddressid%22%20to%3D%22rgc_address%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22ad%22%3E%3Cattribute%20name%3D%22latitude%22%20%2F%3E%3Cattribute%20name%3D%22longitude%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
                         req5.setRequestHeader("OData-MaxVersion", "4.0");
                         req5.setRequestHeader("OData-Version", "4.0");
                         req5.setRequestHeader("Accept", "application/json");
@@ -259,77 +562,11 @@
                     Xrm.Utility.alertDialog(this.statusText);
                 }
             }
-        };
-        req4.send();
-    }
-
-    function test() {
-        Orders.clearLayers();
-        var req4 = new XMLHttpRequest();
-        req4.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?$select=ordernumber,requestdeliveryby,salesorderid&$expand=opportunityid($select=rgc_address),rgc_personal_account($select=ownerid)", true);
-        req4.setRequestHeader("OData-MaxVersion", "4.0");
-        req4.setRequestHeader("OData-Version", "4.0");
-        req4.setRequestHeader("Accept", "application/json");
-        req4.onreadystatechange = function() {
-            if (this.readyState === 4) {
-                req4.onreadystatechange = null;
-                if (this.status === 200) {
-                    var results = JSON.parse(this.response);
-                    console.log(results.value[1]);
-                    //console.log(results[1].ordernumber);
-                    console.log(results.value[1].requestdeliveryby);
-                    console.log(results.value[1].salesorderid);
-                    console.log(results.value[1].opportunityid);
-                    console.log(results.value[1].rgc_personal_account);                    
-                    results.value.forEach(function(item, i, arr) {
-                        //console.log(item);
-                        /*var req5 = new XMLHttpRequest();
-                        req5.open("GET", "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/opportunities?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22true%22%3E%3Centity%20name%3D%22opportunity%22%3E%3Cattribute%20name%3D%22rgc_id%22%20%2F%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3Cattribute%20name%3D%22opportunityid%22%20%2F%3E%3Corder%20attribute%3D%22rgc_id%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22rgc_address%22%20operator%3D%22eq%22%20uitype%3D%22customeraddress%22%20value%3D%22%7B" + item.af_x002e_rgc_address + "%7D%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22salesorder%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20alias%3D%22ak%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22salesorderid%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3Clink-entity%20name%3D%22customeraddress%22%20from%3D%22customeraddressid%22%20to%3D%22rgc_address%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22ad%22%3E%3Cattribute%20name%3D%22latitude%22%20%2F%3E%3Cattribute%20name%3D%22longitude%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E", true);
-                        req5.setRequestHeader("OData-MaxVersion", "4.0");
-                        req5.setRequestHeader("OData-Version", "4.0");
-                        req5.setRequestHeader("Accept", "application/json");
-                        req5.onreadystatechange = function() {
-                            if (this.readyState === 4) {
-                                req5.onreadystatechange = null;
-                                if (this.status === 200) {
-                                    var results5 = JSON.parse(this.response);
-                                    results5.value.forEach(function(item5, i, arr) {
-                                        if (item5.ad_x002e_latitude != undefined && item5.ad_x002e_longitude != undefined) {
-                                            var i = L.ExtraMarkers.icon({
-                                                icon: 'fa-coffee',
-                                                markerColor: 'blue',
-                                                shape: 'circle',
-                                                prefix: 'fa',
-                                            });
-                                            //m.push(L.marker([item5.ad_x002e_latitude, item5.ad_x002e_longitude], { icon: i, }).bindPopup());
-                                            var a = "<a href= 'https://cc.ent.ukrgas.com.ua/gas/main.aspx?etc=1088&extraqs=%3f_gridType%3d1088%26etc%3d1088%26id%3d%257b" + item4.salesorderid + "%257d%26rskey%3d%257b00000000-0000-0000-00AA-000000666900%257d&histKey=608087546&newWindow=true&pagetype=entityrecord&rskey=%7b00000000-0000-0000-00AA-000000666900%7d#646830465' target='_blank'>" + item4.ordernumber + "</a>";
-                                            L.marker([item5.ad_x002e_latitude, item5.ad_x002e_longitude], { icon: i, }).bindPopup(a).addTo(Orders);
-                                        }
-                                    });
-                                } else {
-                                    Xrm.Utility.alertDialog(this.statusText);
-                                }
-                            }
-                        };
-                        req5.send();*/
-                    });
-                } else {
-                    Xrm.Utility.alertDialog(this.statusText);
-                }
-            }
         }
         req4.send();
     }
 
-    function selectAt(){
-        var selectedAt = document.getElementById('atSelect');
-        var id = selectedAt.options[selectedAt.selectedIndex].id;
-        //console.log(selectedAt.options[selectedAt.selectedIndex].id);
-        //console.log(selectedAt.options[selectedAt.selectedIndex].value);
-        //console.log(id);
-    }
-
-    function setFilter(){
+    function getOrdersAsDateFilter() {
 
         var options = {
             year: 'numeric',
@@ -355,9 +592,6 @@
                     results4.value.forEach(function(item4, i, arr) {
                         var tDate = new Date(item4.requestdeliveryby);
                         var tDate = tDate.toLocaleString(tDate, options);
-
-                        console.log(pickedOrdersDate1 + " _ " + pickedOrdersDate2 + " : " + tDate)
-
                         if (tDate === pickedOrdersDate1 && pickedOrdersDate2 === "Invalid Date") {
                             Orders.clearLayers();
                             getmarkers(item4.af_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
@@ -365,7 +599,7 @@
                             Orders.clearLayers();
                             getmarkers(item4.af_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
                         } else if (pickedOrdersDate1 != "Invalid Date" && pickedOrdersDate2 != "Invalid Date") {
-                            if (tDate >= pickedOrdersDate1 && tDate <= pickedOrdersDate2) {
+                            if (tDate >= pickedOrdersDate1 && tDate <= pickedOrdersDate2 || tDate >= pickedOrdersDate2 && tDate <= pickedOrdersDate1) {
                                 Orders.clearLayers();
                                 getmarkers(item4.af_x002e_rgc_address, item4.ordernumber, item4.salesorderid);
                             }
@@ -426,7 +660,6 @@
     function setPatListToField() {
         removeOptions(document.getElementById("atSelect"));
         var patList = {
-            "Все": "0",
             "ЧЕРНІГІВГАЗ": "8991B08E-F905-E611-80D9-00155D0F0906",
             "ВІННИЦЯГАЗ": "2B4C6329-F905-E611-80D9-00155D0F0906",
             "ВОЛИНЬГАЗ": "2E501F31-F905-E611-80D9-00155D0F0906",
@@ -447,6 +680,7 @@
             "ХАРКІВМІСЬКГАЗ": "8300EA87-F905-E611-80D9-00155D0F0906",
             "ХМЕЛЬНИЦЬКГАЗ": "8491B08E-F905-E611-80D9-00155D0F0906",
             "ЧЕРНІВЦІГАЗ": "FF3FF999-F905-E611-80D9-00155D0F0906",
+            "Все": "0",
         }
         var x = document.getElementById("atSelect");
         $.each(patList, function(key, value) {
