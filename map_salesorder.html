@@ -26,12 +26,22 @@
     input[type=button]{
         border-radius:5px;
     }
+    .dateElem{
+        widows: 60%;
+        display: flex;
+        flex-direction: row;
+        justify-content: start;
+        padding-right: 10px;
+    }
+    label{
+     padding-left: 50px;   
+    }
     </style>
 </head>
 
 <body style="overflow-wrap: break-word;">
     <div style="margin-bottom:10px;">
-        <div style="float:left;">Дата
+        <!--<div style="float:left;">Дата
             З:<input type="date" id="ordersDate1" data-position="right top">
             По:<input type="date" id="ordersDate2" data-position="right top">
             <input type="button" id="btn" value="Выбрать дату" onclick="getOrdersAsDateFilter()">
@@ -42,24 +52,37 @@
                 <input type="button" value="Выбрать АТ" onclick="globalFunc()">
                 <input type="button" value="Тестовая" id="testBTN" style="display:'none;'" onclick="test()">
             </label>
+        </div>-->
+        <div class="dateElem">
+            <div>Дата
+                З:<input type="date" id="ordersDate1" data-position="right top">
+                По:<input type="date" id="ordersDate2" data-position="right top">
+                <input type="button" id="btn" value="Выбрать дату" onclick="getOrdersAsDateFilter()">
+            </div>
+            <div>
+                <label for="atSelect">АТ
+                    <select id="atSelect"></select>
+                    <input type="button" value="Выбрать АТ" onclick="globalFunc()">
+                    <input type="button" value="Тестовая" id="testBTN" onclick="test()">
+                </label>
+            </div>
         </div>
     </div>
     <div id="map" style="font-family: undefined;"></div>
-    <script type="text/javascript">        
+    <script type="text/javascript">
     var resources = {
-        1:"map_salesorder",
-        2:"map_exchangesorder"
+        1: "map_salesorder",
+        2: "map_exchangesorder"
     };
     var selectedResource = resources[1];
     setPatListToField();
-    var defCoord = [50.450565,30.524263];
-    if(selectedResource=="map_salesorder"){
+    var defCoord = [50.450565, 30.524263];
+    if (selectedResource == "map_salesorder") {
         $('#atSelect').val('ЧЕРНІГІВГАЗ').change();
         //selectedAt.options[selectedAt.selectedIndex].id
-        defCoord = [51.51714, 31.28505];   
+        defCoord = [51.51714, 31.28505];
         defCoord = getPatCoordinatesAsID();
-    }
-    else {
+    } else {
         $('#atSelect').val('ХМЕЛЬНИЦЬКГАЗ').change();
         //defCoord = [49.416824,26.974343];
         defCoord = getPatCoordinatesAsID();
@@ -78,8 +101,8 @@
         "замена го": "5"
     };
 
-    globalFunc();    
-    
+    globalFunc();
+
     var map = L.map('map', { preferCanvas: true }).setView(defCoord, 10);
     L.tileLayer('https://{s}.tile.osm.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
@@ -88,10 +111,10 @@
     //map.addLayer(Sectors);
     OrdersSectors.addLayer(Orders);
     OrdersSectors.addLayer(Sectors);
-     /*setTimeout(function() {
-             map.addLayer(OrdersSectors);      
-        }, 1000);*/
-   
+    /*setTimeout(function() {
+            map.addLayer(OrdersSectors);      
+       }, 1000);*/
+
     /*
         var baseLayers = {
             "Clear Map": map,
@@ -116,19 +139,19 @@
     L.control.layers.tree(baseTree).addTo(map);
 
 
-    function globalFunc() {        
+    function globalFunc() {
         //OrdersSectors.clearLayers();
         Sectors.clearLayers();
         getSectorsAsFilter()
         getOrdersAsATFilter();
         setTimeout(function() {
-            changeCenterOfView();        
+            changeCenterOfView();
         }, 1000);
     }
 
     function hideAdminBTN() {
         var role = Xrm.Page.context.getUserRoles();
-        var delRoles = ["3319aaff-a901-e811-80cf-00155d0f313b"];//"55d2f43e-ad08-e311-8620-00155d001525"
+        var delRoles = ["3319aaff-a901-e811-80cf-00155d0f313b"]; //"55d2f43e-ad08-e311-8620-00155d001525"
         var visible = false;
         $.each(role, function(key, value) {
             $.each(delRoles, function(key1, value1) {
@@ -141,18 +164,18 @@
         };
     };
 
-    function test() {        
+    function test() {
         var viewPos = getPatCoordinatesAsID();
         map.setView(viewPos, 12, {
-          animate: false
+            animate: false
         });
     }
 
 
-    function changeCenterOfView(){
+    function changeCenterOfView() {
         var viewPos = getPatCoordinatesAsID();
         map.setView(viewPos, 12, {
-          animate: true
+            animate: true
         });
     }
 
@@ -283,20 +306,19 @@
         //console.log('AT :' + selectedAt.options[selectedAt.selectedIndex].id);
         var reqStr = "";
         if (selectedAt.options[selectedAt.selectedIndex].id == "0") {
-            if(selectedResource == resources[1]){
-            reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["сервисное обслуживание"]+"2%3C%2Fvalue%3E%0D%0A%3Cvalue%3E"+type_Dict["ремонт"]+"3%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
-            }
-            else {
-                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["замена го"]+"2%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            if (selectedResource == resources[1]) {
+                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E" + type_Dict["сервисное обслуживание"] + "2%3C%2Fvalue%3E%0D%0A%3Cvalue%3E" + type_Dict["ремонт"] + "3%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            } else {
+                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E" + type_Dict["замена го"] + "2%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
             }
             /*reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E"*/
         } else {
-            if(selectedResource == resources[1]){
-            reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["сервисное обслуживание"]+"%3C%2Fvalue%3E%0D%0A%3Cvalue%3E" +type_Dict["ремонт"]+ "%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22%7B"+selectedAt.options[selectedAt.selectedIndex].id+"%7D%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
-            }else{
+            if (selectedResource == resources[1]) {
+                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E" + type_Dict["сервисное обслуживание"] + "%3C%2Fvalue%3E%0D%0A%3Cvalue%3E" + type_Dict["ремонт"] + "%3C%2Fvalue%3E%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22%7B" + selectedAt.options[selectedAt.selectedIndex].id + "%7D%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";
+            } else {
                 /*
                 reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%0D%0A%3Centity%20name%3D%22salesorder%22%3E%0D%0A%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%0D%0A%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%0D%0A%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%21ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%0D%0A%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22in%22%3E%0D%0A%3Cvalue%3E"+type_Dict["замена го"]+"%3C%2Fvalue%3E%0D%0A%0D%0A%3C%2Fcondition%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20visible%3D%22false%22%20link-type%3D%22outer%22%20alias%3D%22op%22%3E%0D%0A%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%0D%0A%3Cfilter%20type%3D%22and%22%3E%0D%0A%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22%7B"+selectedAt.options[selectedAt.selectedIndex].id+"%7D%22%20%2F%3E%0D%0A%3C%2Ffilter%3E%0D%0A%3C%2Flink-entity%3E%0D%0A%3C%2Fentity%3E%0D%0A%3C%2Ffetch%3E";*/
-                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22eq%22%20value%3D%22"+type_Dict["замена го"]+"%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20alias%3D%22op%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22rgc_address%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22"+selectedAt.options[selectedAt.selectedIndex].id+"%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E";
+                reqStr = "https://cc.ent.ukrgas.com.ua/gas/api/data/v8.1/salesorders?fetchXml=%3Cfetch%20version%3D%221.0%22%20output-format%3D%22xml-platform%22%20mapping%3D%22logical%22%20distinct%3D%22false%22%3E%3Centity%20name%3D%22salesorder%22%3E%3Cattribute%20name%3D%22ordernumber%22%20%2F%3E%3Cattribute%20name%3D%22rgc_personal_account%22%20%2F%3E%3Cattribute%20name%3D%22salesorderid%22%20%2F%3E%3Cattribute%20name%3D%22requestdeliveryby%22%20%2F%3E%3Corder%20attribute%3D%22ordernumber%22%20descending%3D%22false%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22ordernumber%22%20operator%3D%22not-null%22%20%2F%3E%3Ccondition%20attribute%3D%22statecode%22%20operator%3D%22eq%22%20value%3D%220%22%20%2F%3E%3Ccondition%20attribute%3D%22requestdeliveryby%22%20operator%3D%22not-null%22%20%2F%3E%3Ccondition%20attribute%3D%22rgc_type%22%20operator%3D%22eq%22%20value%3D%22" + type_Dict["замена го"] + "%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22opportunity%22%20from%3D%22opportunityid%22%20to%3D%22opportunityid%22%20alias%3D%22op%22%3E%3Cattribute%20name%3D%22rgc_address%22%20%2F%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22rgc_address%22%20operator%3D%22not-null%22%20%2F%3E%3C%2Ffilter%3E%3Clink-entity%20name%3D%22kot_personal_account%22%20from%3D%22kot_personal_accountid%22%20to%3D%22rgc_personal_account%22%20alias%3D%22as%22%3E%3Cfilter%20type%3D%22and%22%3E%3Ccondition%20attribute%3D%22ownerid%22%20operator%3D%22eq%22%20uitype%3D%22team%22%20value%3D%22" + selectedAt.options[selectedAt.selectedIndex].id + "%22%20%2F%3E%3C%2Ffilter%3E%3C%2Flink-entity%3E%3C%2Flink-entity%3E%3C%2Fentity%3E%3C%2Ffetch%3E";
             }
         }
         var req4 = new XMLHttpRequest();
@@ -477,31 +499,30 @@
     function getPatCoordinatesAsID() {
         //removeOptions(document.getElementById("atSelect"));
         var coordinatesListFromId = {
-            "8991B08E-F905-E611-80D9-00155D0F0906" : [51.517145,31.285055] , //"ЧЕРНІГІВГАЗ": вірні координати
-            "2B4C6329-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ВІННИЦЯГАЗ": 
-            "2E501F31-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ВОЛИНЬГАЗ": 
-            "7E18FD3A-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ДНІПРОГАЗ": 
-            "DFF67442-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ДНІПРОПЕТРОВСЬКГАЗ": 
-            "9DA5EB49-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ЖИТОМИРГАЗ": 
-            "A1A5EB49-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ЗАКАРПАТГАЗ":
-            "26F18954-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ЗАПОРІЖГАЗ": 
-            "C36BA55C-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ІВАНО-ФРАНКІВСЬКГАЗ": 
-            "C76BA55C-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263] , //"КИЇВОБЛГАЗ": вірні координати
-            "1859E265-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"КРИВОРІЖГАЗ": 
-            "1C59E265-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ЛЬВІВГАЗ": 
-            "45FBCE70-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"МИКОЛАЇВГАЗ": 
-            "48FBCE70-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"РІВНЕГАЗ": 
-            "1745077A-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"СУМИГАЗ": 
-            "5822E697-D306-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ТИСМЕНИЦЯГАЗ": 
-            "E8DBD580-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ХАРКІВГАЗ": 
-            "8300EA87-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ХАРКІВМІСЬКГАЗ": 
-            "8491B08E-F905-E611-80D9-00155D0F0906" : [49.416824,26.974343], //"ХМЕЛЬНИЦЬКГАЗ": 
-            "FF3FF999-F905-E611-80D9-00155D0F0906" : [50.450565,30.524263], //"ЧЕРНІВЦІГАЗ": вірні координати
-            "0":[50.450565,30.524263], //"Все": 
-        }      
+            "8991B08E-F905-E611-80D9-00155D0F0906": [51.517145, 31.285055], //"ЧЕРНІГІВГАЗ": вірні координати
+            "2B4C6329-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ВІННИЦЯГАЗ": 
+            "2E501F31-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ВОЛИНЬГАЗ": 
+            "7E18FD3A-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ДНІПРОГАЗ": 
+            "DFF67442-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ДНІПРОПЕТРОВСЬКГАЗ": 
+            "9DA5EB49-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ЖИТОМИРГАЗ": 
+            "A1A5EB49-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ЗАКАРПАТГАЗ":
+            "26F18954-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ЗАПОРІЖГАЗ": 
+            "C36BA55C-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ІВАНО-ФРАНКІВСЬКГАЗ": 
+            "C76BA55C-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"КИЇВОБЛГАЗ": вірні координати
+            "1859E265-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"КРИВОРІЖГАЗ": 
+            "1C59E265-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ЛЬВІВГАЗ": 
+            "45FBCE70-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"МИКОЛАЇВГАЗ": 
+            "48FBCE70-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"РІВНЕГАЗ": 
+            "1745077A-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"СУМИГАЗ": 
+            "5822E697-D306-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ТИСМЕНИЦЯГАЗ": 
+            "E8DBD580-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ХАРКІВГАЗ": 
+            "8300EA87-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ХАРКІВМІСЬКГАЗ": 
+            "8491B08E-F905-E611-80D9-00155D0F0906": [49.416824, 26.974343], //"ХМЕЛЬНИЦЬКГАЗ": 
+            "FF3FF999-F905-E611-80D9-00155D0F0906": [50.450565, 30.524263], //"ЧЕРНІВЦІГАЗ": вірні координати
+            "0": [50.450565, 30.524263], //"Все": 
+        }
         return coordinatesListFromId[document.getElementById('atSelect').options[document.getElementById('atSelect').selectedIndex].id];
     }
-
     </script>
 </body>
 
